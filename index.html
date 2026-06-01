@@ -3,10 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="Bloom">
-<meta name="theme-color" content="#FBF6EF">
 <title>Bloom — Pregnancy Hub</title>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -41,6 +37,7 @@
   button.act{font-family:'Outfit',sans-serif;width:100%;padding:12px;border-radius:14px;border:none;background:var(--ink);color:var(--cream);font-size:14px;font-weight:500;cursor:pointer;transition:background .3s;}
   .wkbtn{width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:var(--paper);color:var(--ink);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
   .wkbtn:active{background:var(--blush);}
+  /* Ask tab */
   .searchbar{display:flex;gap:8px;background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:8px 8px 8px 16px;align-items:center;box-shadow:0 4px 18px rgba(46,42,45,.05);}
   .searchbar input{flex:1;border:none;outline:none;font-family:'Outfit',sans-serif;font-size:15px;background:transparent;color:var(--ink);}
   .searchbar input::placeholder{color:var(--muted);}
@@ -60,17 +57,39 @@
 </style>
 </head>
 <body>
-<div class="frame">
+<!-- ── Onboarding / setup ── -->
+<div id="setup" class="frame" style="display:none;min-height:100vh;padding:0 24px;">
+  <div style="padding-top:18vh;text-align:center;">
+    <div class="serif" style="font-size:40px;font-weight:600;letter-spacing:-1px;">Bloom</div>
+    <p style="color:var(--muted);font-size:14px;margin:8px 0 0;">A calm companion for your pregnancy</p>
+  </div>
+  <div class="card" style="padding:22px;margin-top:34px;">
+    <div class="upper" style="color:var(--muted);margin-bottom:14px;">Let's set up your timeline</div>
+    <div style="display:flex;gap:8px;margin-bottom:16px;">
+      <div id="modeDue" class="tabbtn on" onclick="setMode('due')" style="flex:1;">I know my due date</div>
+      <div id="modeLmp" class="tabbtn" onclick="setMode('lmp')" style="flex:1;">Use my last period</div>
+    </div>
+    <label id="dateLabel" style="font-size:13px;color:var(--muted);display:block;margin-bottom:6px;">Estimated due date</label>
+    <input type="date" id="dateInput" style="width:100%;padding:13px;border:1px solid var(--line);border-radius:13px;font-family:'Outfit',sans-serif;font-size:15px;color:var(--ink);background:var(--paper);">
+    <div id="lmpExtra" style="display:none;margin-top:14px;">
+      <label style="font-size:13px;color:var(--muted);display:block;margin-bottom:6px;">Average cycle length (days)</label>
+      <input type="number" id="cycleInput" value="28" min="20" max="45" style="width:100%;padding:13px;border:1px solid var(--line);border-radius:13px;font-family:'Outfit',sans-serif;font-size:15px;color:var(--ink);background:var(--paper);">
+    </div>
+    <div id="setupPreview" style="font-size:13px;color:var(--clayDeep);margin-top:14px;min-height:18px;text-align:center;"></div>
+    <button class="act" style="margin-top:8px;" onclick="finishSetup()">Start tracking</button>
+  </div>
+  <p style="font-size:11px;color:var(--muted);text-align:center;margin-top:16px;line-height:1.5;">
+    Dates are estimates based on Naegele's rule (LMP + 280 days) and may be adjusted by your provider's dating scan. This app is informational and not a substitute for medical care.
+  </p>
+</div>
+
+<div id="app" class="frame" style="display:none;">
   <header>
     <div style="display:flex;justify-content:space-between;align-items:baseline;">
       <span class="serif" style="font-size:26px;font-weight:600;letter-spacing:-.5px;">Bloom</span>
       <span id="triLabel" style="font-size:12px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;"></span>
     </div>
-    <div style="display:flex;align-items:center;gap:12px;margin:16px 0 2px;">
-      <button class="wkbtn" onclick="changeWeek(-1)">−</button>
-      <p class="serif" id="weekLine" style="font-size:19px;margin:0;font-weight:400;flex:1;text-align:center;"></p>
-      <button class="wkbtn" onclick="changeWeek(1)">+</button>
-    </div>
+    <p class="serif" id="weekLine" style="font-size:21px;margin:16px 0 2px;font-weight:400;text-align:center;"></p>
     <p id="dueLine" style="font-size:13.5px;color:var(--muted);margin:0;text-align:center;"></p>
     <div style="margin-top:18px;">
       <div style="height:8px;background:var(--paper);border-radius:99px;overflow:hidden;border:1px solid var(--line);">
@@ -94,10 +113,12 @@
 
   <footer style="text-align:center;font-size:10.5px;color:var(--muted);padding:8px 24px 0;line-height:1.5;">
     Bloom is a companion, not a clinician. Always reach out to your provider with concerns.
+    <br><span onclick="resetAll()" style="text-decoration:underline;cursor:pointer;">Change due date / start over</span>
   </footer>
 </div>
 
 <script>
+// ── Full week 1–40 dataset ─────────────────────────────────────────────
 const SIZES = {
   1:["a poppy seed","—","—"],2:["a poppy seed","0.1 cm","<1 g"],3:["a pinhead","0.1 cm","<1 g"],
   4:["a poppy seed","0.2 cm","<1 g"],5:["a sesame seed","0.3 cm","<1 g"],6:["a lentil","0.5 cm","<1 g"],
@@ -145,7 +166,13 @@ function milestone(w){
   return m[w]||null;
 }
 
-let week = 24;
+// ── State ─────────────────────────────────────────────────────────────
+// Real date engine: everything derives from dueDate (a Date object).
+let dueDate = null;      // estimated due date
+let week = 1;            // current gestational week, computed from today
+let dayOfWeek = 0;       // days into the current week
+let viewWeek = 1;        // which week the Baby tab is showing
+let setupMode = "due";
 let tab = "home";
 const SYMPTOMS=[["nausea","Nausea","#C97B63"],["fatigue","Fatigue","#7E8A6F"],["back","Back pain","#D9A441"],["mood","Mood","#A87BA8"],["sleep","Sleep","#6F8AA8"]];
 let log=[
@@ -158,8 +185,72 @@ let draft={nausea:1,fatigue:2,back:1,mood:4,sleep:3};
 let active=["nausea","fatigue","mood"];
 let saved=false;
 
-const APPTS=[["Jun","12","Glucose screening","Dr. Awan · Lab B",true],["Jun","26","Routine OB check-up","Dr. Awan",false],["Jul","10","Growth ultrasound","Imaging Suite 2",false]];
+// Appointments are stored as real Date objects (added by the user).
+let appts=[]; // {date: Date, label, who}
 let questions=["Is my back pain normal at this stage?","Should I adjust my iron intake?","When do I start counting kicks?"];
+
+// ── Persistence ───────────────────────────────────────────────────────
+// Saves to the device via localStorage. Wrapped in try/catch so the app
+// never breaks if storage is unavailable (e.g. private mode or preview).
+const STORE_KEY="bloom_v1";
+function save(){
+  try{
+    const data={
+      dueDate: dueDate ? dueDate.getTime() : null,
+      appts: appts.map(a=>({date:a.date.getTime(), label:a.label, who:a.who})),
+      log, questions, active
+    };
+    localStorage.setItem(STORE_KEY, JSON.stringify(data));
+  }catch(e){ /* storage unavailable — app still works for this session */ }
+}
+function load(){
+  try{
+    const raw=localStorage.getItem(STORE_KEY);
+    if(!raw) return false;
+    const d=JSON.parse(raw);
+    if(!d.dueDate) return false;
+    dueDate=new Date(d.dueDate);
+    appts=(d.appts||[]).map(a=>({date:new Date(a.date), label:a.label, who:a.who}));
+    if(Array.isArray(d.log)) log=d.log;
+    if(Array.isArray(d.questions)) questions=d.questions;
+    if(Array.isArray(d.active)) active=d.active;
+    return true;
+  }catch(e){ return false; }
+}
+function resetAll(){
+  try{ localStorage.removeItem(STORE_KEY); }catch(e){}
+  location.reload();
+}
+
+// ── Date engine ───────────────────────────────────────────────────────
+const MS_DAY=86400000;
+const MONTHS=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+function startOfDay(d){const x=new Date(d);x.setHours(0,0,0,0);return x;}
+function fmt(d){return MONTHS[d.getMonth()]+" "+d.getDate()+", "+d.getFullYear();}
+function fmtShort(d){return MONTHS[d.getMonth()]+" "+d.getDate();}
+function addDays(d,n){return new Date(d.getTime()+n*MS_DAY);}
+
+// Due date from last menstrual period: LMP + 280 days, adjusted for cycle length.
+function dueFromLMP(lmp,cycle){
+  const adj=(cycle||28)-28;            // longer cycle → later ovulation → later due date
+  return addDays(startOfDay(lmp),280+adj);
+}
+// Conception start (LMP) is 280 days before due date.
+function lmpFromDue(due){return addDays(startOfDay(due),-280);}
+
+// Compute current gestational age from today relative to the due date.
+function recompute(){
+  if(!dueDate) return;
+  const lmp=lmpFromDue(dueDate);
+  const today=startOfDay(new Date());
+  const daysSince=Math.floor((today-lmp)/MS_DAY);
+  const clamped=Math.max(0,Math.min(daysSince,40*7));
+  week=Math.max(1,Math.min(40,Math.floor(clamped/7)+1));
+  dayOfWeek=clamped%7;
+  viewWeek=week;
+}
+function dueDateObj(){return dueDate;}
+function daysUntilDue(){return Math.round((startOfDay(dueDate)-startOfDay(new Date()))/MS_DAY);}
 
 function tri(w){return w<=13?"Trimester 1":w<=27?"Trimester 2":"Trimester 3";}
 function insight(){
@@ -168,20 +259,29 @@ function insight(){
              : "Your mood has held steady and strong this week. Sleep seems to be tracking with it.";
 }
 
+// ── Render header ─────────────────────────────────────────────────────
 function renderHeader(){
+  recompute();
   document.getElementById("triLabel").textContent=tri(week);
-  document.getElementById("weekLine").innerHTML=`Week <span style="color:var(--clayDeep);font-weight:600;">${week}</span> of 40`;
-  const days=(40-week)*7;
-  document.getElementById("dueLine").textContent= week>=40 ? "Your due date is here 🎉" : `${days} days until your due date`;
+  document.getElementById("weekLine").innerHTML=`Week <span style="color:var(--clayDeep);font-weight:600;">${week}</span> + ${dayOfWeek} ${dayOfWeek===1?"day":"days"}`;
+  const d=daysUntilDue();
+  const dueStr=fmt(dueDate);
+  let line;
+  if(d>1) line=`${d} days until your due date · ${dueStr}`;
+  else if(d===1) line=`1 day until your due date · ${dueStr}`;
+  else if(d===0) line=`Your due date is today 🎉`;
+  else line=`${Math.abs(d)} ${Math.abs(d)===1?"day":"days"} past your due date`;
+  document.getElementById("dueLine").textContent=line;
   const pct=Math.round((week/40)*100);
   document.getElementById("prog").style.width=pct+"%";
   document.getElementById("progLabel").textContent=pct+"% there";
 }
-function changeWeek(d){week=Math.min(40,Math.max(1,week+d));renderHeader();render();}
-function jumpWeek(w){week=w;renderHeader();render();}
+function jumpWeek(w){viewWeek=w;render();}
 
+// ── Tabs ──────────────────────────────────────────────────────────────
 function setTab(t){tab=t;document.querySelectorAll(".tabbtn").forEach(b=>b.classList.toggle("on",b.dataset.tab===t));render();}
 
+// ── Views ─────────────────────────────────────────────────────────────
 function ring(val,max,label,sub,color){
   const r=34,c=2*Math.PI*r,off=c*(1-Math.min(val/max,1));
   return `<svg width="96" height="96" viewBox="0 0 96 96">
@@ -193,8 +293,34 @@ function ring(val,max,label,sub,color){
   </svg>`;
 }
 
+function nextAppt(){
+  const today=startOfDay(new Date());
+  const future=appts.filter(a=>startOfDay(a.date)>=today).sort((a,b)=>a.date-b.date);
+  return future[0]||null;
+}
+function weekDateRange(){
+  // The current gestational week spans these calendar dates.
+  const lmp=lmpFromDue(dueDate);
+  const start=addDays(lmp,(week-1)*7);
+  const end=addDays(start,6);
+  return fmtShort(start)+" – "+fmtShort(end);
+}
+
 function viewHome(){
   const s=SIZES[week];
+  const na=nextAppt();
+  let apptCard;
+  if(na){
+    const d=na.date;
+    apptCard=`<div style="display:flex;align-items:center;gap:14px;">
+      <div style="background:var(--blush);border-radius:14px;padding:10px 14px;text-align:center;min-width:52px;">
+        <div class="serif" style="font-size:18px;font-weight:600;">${d.getDate()}</div><div style="font-size:10px;color:var(--clayDeep);letter-spacing:1px;">${MONTHS[d.getMonth()].toUpperCase()}</div>
+      </div>
+      <div><div style="font-size:14.5px;font-weight:500;">${na.label}</div><div style="font-size:12.5px;color:var(--muted);">${na.who||""}</div></div>
+    </div>`;
+  } else {
+    apptCard=`<div style="font-size:13.5px;color:var(--muted);">No upcoming appointments yet — add one in the Appointments tab.</div>`;
+  }
   return `<div class="col rise">
     <div class="card" style="padding:20px;display:flex;align-items:center;gap:18px;background:linear-gradient(135deg,var(--sageSoft),var(--paper));">
       <div style="font-size:46px;animation:float 4s ease-in-out infinite;">${EMOJI[week]}</div>
@@ -204,35 +330,39 @@ function viewHome(){
         <div style="font-size:12.5px;color:var(--muted);">${s[1]==="—"?"just getting started":s[1]+" · about "+s[2]}</div>
       </div>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
-      <div class="card" style="padding:18px 14px;text-align:center;">${ring(3,3,"3/3","REMINDERS","var(--clay)")}<div style="font-size:12px;color:var(--muted);margin-top:4px;">Vitamins logged today</div></div>
-      <div class="card" style="padding:18px 14px;text-align:center;">${ring(82,100,"82","WELLNESS","var(--sage)")}<div style="font-size:12px;color:var(--muted);margin-top:4px;">Up 6 pts this week</div></div>
+    <div class="card" style="padding:14px 18px;display:flex;justify-content:space-between;align-items:center;">
+      <span style="font-size:13px;color:var(--muted);">This week</span>
+      <span class="serif" style="font-size:14.5px;">${weekDateRange()}</span>
     </div>
     <div class="card" style="padding:18px;">
-      <div class="upper" style="color:var(--muted);margin-bottom:10px;">Next up</div>
-      <div style="display:flex;align-items:center;gap:14px;">
-        <div style="background:var(--blush);border-radius:14px;padding:10px 14px;text-align:center;min-width:52px;">
-          <div class="serif" style="font-size:18px;font-weight:600;">12</div><div style="font-size:10px;color:var(--clayDeep);letter-spacing:1px;">JUN</div>
-        </div>
-        <div><div style="font-size:14.5px;font-weight:500;">Glucose screening</div><div style="font-size:12.5px;color:var(--muted);">Dr. Awan · Lab B · fasting</div></div>
-      </div>
+      <div class="upper" style="color:var(--muted);margin-bottom:10px;">Next appointment</div>
+      ${apptCard}
     </div>
     <div class="card" style="padding:18px;background:var(--ink);color:var(--cream);">
-      <div class="upper" style="color:var(--gold);margin-bottom:8px;">Smart insight</div>
-      <div class="serif" style="font-size:16px;line-height:1.45;">${insight()}</div>
+      <div class="upper" style="color:var(--gold);margin-bottom:8px;">Wellness note</div>
+      <div class="serif" style="font-size:16px;line-height:1.45;">${log.length?insight():"Log how you feel in the Wellness tab and patterns will appear here."}</div>
     </div>
   </div>`;
 }
 
 function viewBaby(){
-  const s=SIZES[week], ms=milestone(week);
+  const w=viewWeek;
+  const s=SIZES[w], ms=milestone(w);
   let pills="";
-  for(let w=1;w<=40;w++) pills+=`<div class="weekpill ${w===week?'on':''}" onclick="jumpWeek(${w})"><div style="font-size:9px;letter-spacing:1px;">WK</div>${w}</div>`;
+  for(let i=1;i<=40;i++) pills+=`<div class="weekpill ${i===w?'on':''}" onclick="jumpWeek(${i})"><div style="font-size:9px;letter-spacing:1px;">WK</div>${i}</div>`;
+  // date range for the viewed week
+  const lmp=lmpFromDue(dueDate);
+  const start=addDays(lmp,(w-1)*7);
+  const rangeStr=fmtShort(start)+" – "+fmtShort(addDays(start,6));
+  const isCurrent=(w===week);
   return `<div class="col rise">
     <div class="scrub" id="scrub">${pills}</div>
+    <div style="text-align:center;font-size:12px;color:var(--muted);margin-top:-4px;">
+      ${isCurrent?"You are here · ":""}${rangeStr}
+    </div>
     <div class="card" style="padding:22px;text-align:center;background:radial-gradient(circle at 50% 20%,var(--sageSoft),var(--paper));">
-      <div style="font-size:64px;animation:float 5s ease-in-out infinite;">${EMOJI[week]}</div>
-      <div class="serif" style="font-size:22px;margin:6px 0 2px;">This week, baby is ${s[0]}</div>
+      <div style="font-size:64px;animation:float 5s ease-in-out infinite;">${EMOJI[w]}</div>
+      <div class="serif" style="font-size:22px;margin:6px 0 2px;">In week ${w}, baby is ${s[0]}</div>
       ${s[1]==="—"?"":`<div style="display:flex;justify-content:center;gap:22px;margin-top:12px;">
         <div><div class="serif" style="font-size:18px;">${s[1]}</div><div style="font-size:11px;color:var(--muted);">length</div></div>
         <div style="width:1px;background:var(--line);"></div>
@@ -241,11 +371,11 @@ function viewBaby(){
     </div>
     <div class="card" style="padding:18px;">
       <div class="upper" style="color:var(--clayDeep);margin-bottom:8px;">Developing now</div>
-      <p style="font-size:14px;line-height:1.6;margin:0;color:#534B47;">${babyNote(week)}</p>
+      <p style="font-size:14px;line-height:1.6;margin:0;color:#534B47;">${babyNote(w)}</p>
     </div>
     <div class="card" style="padding:18px;">
       <div class="upper" style="color:var(--sage);margin-bottom:8px;">Your body</div>
-      <p style="font-size:14px;line-height:1.6;margin:0;color:#534B47;">${bodyNote(week)}</p>
+      <p style="font-size:14px;line-height:1.6;margin:0;color:#534B47;">${bodyNote(w)}</p>
     </div>
     ${ms?`<div class="card" style="padding:14px 18px;display:flex;gap:12px;align-items:center;background:var(--blush);border:none;">
       <span style="font-size:22px;">🌟</span><span style="font-size:13.5px;font-weight:500;color:var(--clayDeep);">${ms}</span></div>`:""}
@@ -294,13 +424,20 @@ function viewWellness(){
 }
 
 function viewAppts(){
+  const today=startOfDay(new Date());
+  const sorted=[...appts].sort((a,b)=>a.date-b.date);
   let rows="";
-  APPTS.forEach((a,i)=>{
-    rows+=`<div class="card" style="padding:16px;display:flex;align-items:center;gap:14px;animation:rise .5s ${i*0.08}s both;">
-      <div style="background:${a[4]?'var(--clay)':'var(--sageSoft)'};color:${a[4]?'#fff':'var(--sage)'};border-radius:14px;padding:10px 12px;text-align:center;min-width:50px;">
-        <div class="serif" style="font-size:16px;font-weight:600;">${a[1]}</div><div style="font-size:9.5px;letter-spacing:1px;">${a[0].toUpperCase()}</div></div>
-      <div style="flex:1;"><div style="font-size:14.5px;font-weight:500;">${a[2]}</div><div style="font-size:12.5px;color:var(--muted);">${a[3]}</div></div>
-      ${a[4]?'<span style="font-size:10px;color:var(--clayDeep);font-weight:600;letter-spacing:1px;">SOON</span>':''}
+  if(sorted.length===0){
+    rows=`<div class="card" style="padding:20px;text-align:center;color:var(--muted);font-size:13.5px;">No appointments yet. Add your prenatal visits below to see them counted down here.</div>`;
+  }
+  sorted.forEach((a,i)=>{
+    const d=a.date, soon=startOfDay(d)>=today && (startOfDay(d)-today)/MS_DAY<=10;
+    const past=startOfDay(d)<today;
+    rows+=`<div class="card" style="padding:16px;display:flex;align-items:center;gap:14px;opacity:${past?0.5:1};animation:rise .5s ${i*0.06}s both;">
+      <div style="background:${soon?'var(--clay)':'var(--sageSoft)'};color:${soon?'#fff':'var(--sage)'};border-radius:14px;padding:10px 12px;text-align:center;min-width:50px;">
+        <div class="serif" style="font-size:16px;font-weight:600;">${d.getDate()}</div><div style="font-size:9.5px;letter-spacing:1px;">${MONTHS[d.getMonth()].toUpperCase()}</div></div>
+      <div style="flex:1;"><div style="font-size:14.5px;font-weight:500;">${a.label}</div><div style="font-size:12.5px;color:var(--muted);">${a.who||fmt(d)}</div></div>
+      ${soon?'<span style="font-size:10px;color:var(--clayDeep);font-weight:600;letter-spacing:1px;">SOON</span>':past?'<span style="font-size:10px;color:var(--muted);">done</span>':''}
     </div>`;
   });
   let qs="";
@@ -309,14 +446,16 @@ function viewAppts(){
       <span style="color:var(--clay);">○</span>${q}</div>`;
   });
   return `<div class="col rise">
-    <div class="card" style="padding:18px;background:linear-gradient(135deg,var(--blush),var(--paper));">
-      <div class="upper" style="color:var(--clayDeep);">Coming up next</div>
-      <div class="serif" style="font-size:19px;margin:6px 0 2px;">Glucose screening</div>
-      <div style="font-size:13px;color:var(--muted);">in 12 days · remember to fast 8 hrs before</div>
+    <div class="card" style="padding:18px;">
+      <div class="upper" style="color:var(--muted);margin-bottom:12px;">Add an appointment</div>
+      <input type="date" id="apptDate" style="width:100%;padding:11px;border:1px solid var(--line);border-radius:12px;font-family:'Outfit',sans-serif;font-size:14px;margin-bottom:8px;">
+      <input type="text" id="apptLabel" placeholder="e.g. 20-week anatomy scan" style="width:100%;padding:11px;border:1px solid var(--line);border-radius:12px;font-family:'Outfit',sans-serif;font-size:14px;margin-bottom:8px;">
+      <input type="text" id="apptWho" placeholder="Provider or location (optional)" style="width:100%;padding:11px;border:1px solid var(--line);border-radius:12px;font-family:'Outfit',sans-serif;font-size:14px;margin-bottom:10px;">
+      <button class="act" onclick="addAppt()">Add appointment</button>
     </div>
     ${rows}
     <div class="card" style="padding:18px;">
-      <div class="upper" style="color:var(--muted);margin-bottom:10px;">Questions for Dr. Awan</div>
+      <div class="upper" style="color:var(--muted);margin-bottom:10px;">Questions for my provider</div>
       ${qs}
       <button class="act" style="margin-top:12px;background:transparent;color:var(--muted);border:1px dashed var(--line);" onclick="addQuestion()">+ Add a question</button>
     </div>
@@ -330,29 +469,41 @@ function render(){
     const el=document.querySelector(".weekpill.on");
     if(el) el.scrollIntoView({inline:"center",block:"nearest"});
   }
+  if(tab==="ask" && !asking){
+    const inp=document.getElementById("askInput");
+    if(inp && chat.length>0) inp.focus();
+  }
 }
 
+// ── Interactions ──────────────────────────────────────────────────────
 function setDraft(k,v){draft[k]=+v;document.getElementById("val-"+k).textContent=v+"/5";}
-function toggle(k){active=active.includes(k)?active.filter(x=>x!==k):[...active,k];render();}
+function toggle(k){active=active.includes(k)?active.filter(x=>x!==k):[...active,k];save();render();}
 function addEntry(){
   const labels=["M","T","W","T","F","S","S"];
   log=[...log.slice(1),{day:labels[log.length%7],...draft}];
-  saved=true;render();
+  saved=true;save();render();
   setTimeout(()=>{saved=false;if(tab==="wellness")render();},1800);
 }
 function addQuestion(){
   const q=prompt("What would you like to ask your provider?");
-  if(q&&q.trim()){questions.push(q.trim());render();}
+  if(q&&q.trim()){questions.push(q.trim());save();render();}
+}
+function addAppt(){
+  const dateVal=document.getElementById("apptDate").value;
+  const label=document.getElementById("apptLabel").value.trim();
+  const who=document.getElementById("apptWho").value.trim();
+  if(!dateVal){alert("Please choose a date.");return;}
+  if(!label){alert("Please add a short description.");return;}
+  const [y,m,d]=dateVal.split("-").map(Number);
+  appts.push({date:new Date(y,m-1,d),label,who});
+  save();
+  render();
 }
 
-// ── Ask tab ───────────────────────────────────────────────────────────
-let chat=[];
-let asking=false;
-
-const SUGGESTS=["Can I eat sushi?","Is brie safe?","How much coffee is okay?","Can I eat deli meat?","Is honey safe?"];
-
-// Offline food safety fallback
+// ── Food safety knowledge base (offline fallback) ─────────────────────
+// Reflects common, widely-published pregnancy guidance. Educational only.
 const FOOD_DB = [
+  // verdict: yes / no / caution
   {k:["sushi","raw fish","sashimi"],v:"caution",t:"Cooked sushi (like California or shrimp rolls) is fine. Avoid raw fish and raw shellfish due to listeria and parasite risk. Low-mercury cooked fish is great in moderation."},
   {k:["soft cheese","brie","camembert","feta","blue cheese","goat cheese"],v:"caution",t:"Soft cheeses are safe ONLY if made from pasteurized milk and the label says so. Avoid unpasteurized soft cheeses due to listeria risk. Hard cheeses are always fine."},
   {k:["deli meat","cold cuts","lunch meat","ham","salami"],v:"caution",t:"Safe if heated until steaming hot (165°F/74°C) right before eating, which kills listeria. Eating it cold straight from the package carries a small listeria risk."},
@@ -360,17 +511,17 @@ const FOOD_DB = [
   {k:["alcohol","wine","beer","cocktail"],v:"no",t:"No amount of alcohol is established as safe in pregnancy. Major health bodies recommend avoiding it entirely."},
   {k:["sushi rice","cooked roll","tempura roll","california roll"],v:"yes",t:"Fully cooked rolls are a safe and tasty option. Just steer clear of the raw-fish varieties."},
   {k:["salmon","cooked salmon","shrimp","cod","tilapia","sardines"],v:"yes",t:"Well-cooked low-mercury fish is encouraged — it's a great source of omega-3s. Aim for 2–3 servings a week."},
-  {k:["tuna","albacore"],v:"caution",t:"Canned light tuna is lower in mercury. Limit albacore/white tuna to about one serving a week, and avoid high-mercury fish like swordfish, shark, and king mackerel."},
+  {k:["tuna","albacore"],v:"caution",t:"Canned light tuna is lower in mercury (a few servings/week is okay). Limit albacore/white tuna to about one serving a week, and avoid high-mercury fish like swordfish, shark, and king mackerel."},
   {k:["eggs","runny egg","poached egg"],v:"caution",t:"Fully cooked eggs (firm yolk and white) are safe. Avoid raw or runny eggs unless they're pasteurized, due to salmonella risk."},
   {k:["peanut","peanuts","nuts","peanut butter"],v:"yes",t:"Peanuts and nuts are safe and nutritious unless you personally have a nut allergy. Older advice to avoid them is outdated."},
   {k:["honey"],v:"yes",t:"Honey is safe for you during pregnancy. (The 'no honey' rule is only for babies under 12 months, not for you.)"},
   {k:["sprouts","raw sprouts","alfalfa"],v:"no",t:"Avoid raw sprouts (alfalfa, mung, clover). They're hard to clean and linked to bacterial contamination. Cooked sprouts are fine."},
   {k:["pate","liver","liver pate"],v:"caution",t:"Avoid pâté (listeria risk) and limit liver — it's very high in vitamin A, which can be harmful in large amounts during pregnancy."},
-  {k:["raw milk","unpasteurized"],v:"no",t:"Avoid raw/unpasteurized milk and anything made from it. Pasteurized dairy is safe."},
-  {k:["smoked salmon","lox"],v:"caution",t:"Cold smoked salmon/lox carries a small listeria risk; heating it through makes it safe."},
-  {k:["herbal tea","green tea"],v:"caution",t:"Some herbal teas are fine in moderation. Green tea counts toward your caffeine limit. Check specific blends with your provider."},
+  {k:["raw milk","unpasteurized"],v:"no",t:"Avoid raw/unpasteurized milk and anything made from it, due to listeria and other bacteria. Pasteurized dairy is safe."},
+  {k:["smoked salmon","lox"],v:"caution",t:"Cold smoked salmon/lox carries a small listeria risk; heating it through (e.g. cooked into a dish) makes it safe."},
+  {k:["herbal tea","green tea"],v:"caution",t:"Some herbal teas are fine in moderation, but a few herbs aren't recommended in pregnancy. Green tea counts toward your caffeine limit. Check specific blends with your provider."},
   {k:["spicy","spicy food"],v:"yes",t:"Spicy food is perfectly safe. It won't harm the baby — though it may give you heartburn, especially later on."},
-  {k:["pineapple"],v:"yes",t:"Pineapple is safe and nutritious. The myth that it triggers labor isn't supported by evidence."},
+  {k:["pineapple"],v:"yes",t:"Pineapple is safe and nutritious. The myth that it triggers labor isn't supported — you'd have to eat an impossible amount for the enzyme to matter."},
   {k:["papaya"],v:"caution",t:"Ripe papaya is fine in moderation. Avoid unripe/green papaya, which contains a latex compound that's best avoided."},
   {k:["hot dog","sausage"],v:"caution",t:"Safe when heated until steaming hot. Avoid eating them cold or lukewarm due to listeria risk."},
 ];
@@ -381,6 +532,14 @@ function lookupFood(q){
   return null;
 }
 
+// ── Ask state ─────────────────────────────────────────────────────────
+let chat=[]; // {role, html}
+let asking=false;
+
+const SUGGESTS=["Can I eat sushi?","Is brie safe?","How much coffee is okay?","Can I eat deli meat?","Is honey safe?"];
+
+const SYS_PROMPT=`You are a warm, honest pregnancy information assistant inside a pregnancy-tracking app for first-time moms. Give clear, accurate, evidence-based answers. For food-safety questions, start with a one-word verdict in this exact format on its own first line: "VERDICT: yes" or "VERDICT: no" or "VERDICT: caution". Then explain in 2-4 sentences, plainly and reassuringly. Be honest about uncertainty. For anything involving symptoms, pain, bleeding, medication dosing, or personal medical risk, do not diagnose — clearly recommend contacting their healthcare provider. Never invent facts. Keep answers concise and kind.`;
+
 function verdictBadge(v){
   if(v==="yes") return '<div class="verdict v-yes">✓ Generally safe</div>';
   if(v==="no") return '<div class="verdict v-no">✕ Best avoided</div>';
@@ -388,45 +547,50 @@ function verdictBadge(v){
   return "";
 }
 
-function escapeHtml(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
-
 async function askAI(q){
+  // Try the Anthropic API (works inside Claude artifacts). Fall back offline.
   try{
-    // Call our secure backend route — API key never exposed to the browser
-    const res = await fetch('/api/ask', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ question: q })
+    const res=await fetch("https://api.anthropic.com/v1/messages",{
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        model:"claude-sonnet-4-20250514", max_tokens:1000,
+        system:SYS_PROMPT,
+        messages:[{role:"user",content:q}],
+        tools:[{type:"web_search_20250305",name:"web_search"}]
+      })
     });
-    if(!res.ok) throw new Error('api');
-    const data = await res.json();
-    let text = data.answer || '';
-    let v = null;
-    const m = text.match(/^VERDICT:\s*(yes|no|caution)/i);
-    if(m){ v = m[1].toLowerCase(); text = text.replace(/^VERDICT:\s*(yes|no|caution)\s*/i,'').trim(); }
-    return (v ? verdictBadge(v) : '') + '<div class="answer">' + escapeHtml(text).replace(/\n/g,'<br>') + '</div>';
-  } catch(e){
-    // Offline fallback
-    const f = lookupFood(q);
-    if(f) return verdictBadge(f.v) + '<div class="answer">' + f.t + '</div>' +
+    if(!res.ok) throw new Error("api");
+    const data=await res.json();
+    let text=data.content.filter(b=>b.type==="text").map(b=>b.text).join("\n").trim();
+    let v=null;
+    const m=text.match(/^VERDICT:\s*(yes|no|caution)/i);
+    if(m){ v=m[1].toLowerCase(); text=text.replace(/^VERDICT:\s*(yes|no|caution)\s*/i,"").trim(); }
+    let html=(v?verdictBadge(v):"")+'<div class="answer">'+escapeHtml(text).replace(/\n/g,"<br>")+'</div>';
+    return html;
+  }catch(e){
+    // Offline fallback: food DB or honest "can't reach AI" note
+    const f=lookupFood(q);
+    if(f) return verdictBadge(f.v)+'<div class="answer">'+f.t+'</div>'+
       '<div style="font-size:11px;color:var(--muted);margin-top:10px;">From Bloom\'s built-in food guide · always confirm with your provider</div>';
-    return '<div class="answer">Couldn\'t reach the assistant right now. I have a built-in guide for common foods — try asking about sushi, soft cheese, deli meat, coffee, or alcohol.</div>';
+    return '<div class="answer">I can give you a full AI answer when Bloom is running inside Claude (online). Right now I can\'t reach the assistant, but I have a built-in guide for common foods — try asking about sushi, soft cheese, deli meat, coffee, eggs, or alcohol.</div>';
   }
 }
 
+function escapeHtml(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+
 async function submitAsk(){
   if(asking) return;
-  const inp = document.getElementById("askInput");
-  const q = inp.value.trim();
+  const inp=document.getElementById("askInput");
+  const q=inp.value.trim();
   if(!q) return;
-  asking = true;
-  chat.push({role:"user", html: escapeHtml(q)});
-  chat.push({role:"ai", html:'<div class="typing"><span></span><span></span><span></span></div>'});
-  inp.value = "";
+  asking=true;
+  chat.push({role:"user",html:escapeHtml(q)});
+  chat.push({role:"ai",html:'<div class="typing"><span></span><span></span><span></span></div>'});
+  inp.value="";
   render();
-  const answer = await askAI(q);
-  chat[chat.length-1].html = answer;
-  asking = false;
+  const answer=await askAI(q);
+  chat[chat.length-1].html=answer;
+  asking=false;
   render();
 }
 
@@ -441,7 +605,7 @@ function viewAsk(){
       bubbles+=`<div style="align-self:flex-start;max-width:90%;background:var(--paper);border:1px solid var(--line);padding:14px 16px;border-radius:18px 18px 18px 4px;">${m.html}</div>`;
     }
   });
-  const sugg = SUGGESTS.map(s=>`<span class="suggest" onclick="quickAsk('${s.replace(/'/g,"\\'")}')">${s}</span>`).join("");
+  const sugg=SUGGESTS.map(s=>`<span class="suggest" onclick="quickAsk('${s.replace(/'/g,"\\'")}')">${s}</span>`).join("");
   return `<div class="col rise">
     <div class="searchbar">
       <input id="askInput" placeholder="Ask anything — e.g. can I eat sushi?" onkeydown="if(event.key==='Enter')submitAsk()" autocomplete="off">
@@ -461,8 +625,68 @@ function viewAsk(){
   </div>`;
 }
 
-renderHeader();
-render();
+
+// ── Tabs ──────────────────────────────────────────────────────────────
+function setTabSafe(){}
+
+// ── Onboarding ────────────────────────────────────────────────────────
+function setMode(m){
+  setupMode=m;
+  document.getElementById("modeDue").classList.toggle("on",m==="due");
+  document.getElementById("modeLmp").classList.toggle("on",m==="lmp");
+  document.getElementById("dateLabel").textContent = m==="due" ? "Estimated due date" : "First day of your last period";
+  document.getElementById("lmpExtra").style.display = m==="lmp" ? "block" : "none";
+  updatePreview();
+}
+function parseDateInput(v){ if(!v) return null; const [y,m,d]=v.split("-").map(Number); return new Date(y,m-1,d); }
+function computeDueFromInputs(){
+  const raw=parseDateInput(document.getElementById("dateInput").value);
+  if(!raw) return null;
+  if(setupMode==="due") return startOfDay(raw);
+  const cycle=parseInt(document.getElementById("cycleInput").value)||28;
+  return dueFromLMP(raw,cycle);
+}
+function updatePreview(){
+  const due=computeDueFromInputs();
+  const el=document.getElementById("setupPreview");
+  if(!due){el.textContent="";return;}
+  // temporarily compute week for preview
+  const lmp=lmpFromDue(due), today=startOfDay(new Date());
+  const days=Math.floor((today-lmp)/MS_DAY);
+  const wk=Math.max(1,Math.min(40,Math.floor(days/7)+1));
+  if(setupMode==="lmp") el.textContent=`Estimated due date: ${fmt(due)} · about ${wk} weeks along`;
+  else el.textContent=`That's about ${wk} weeks along today`;
+}
+function finishSetup(){
+  const due=computeDueFromInputs();
+  if(!due){alert("Please enter a date to continue.");return;}
+  dueDate=due;
+  save();
+  document.getElementById("setup").style.display="none";
+  document.getElementById("app").style.display="block";
+  renderHeader();
+  render();
+}
+
+// ── Init ──────────────────────────────────────────────────────────────
+(function init(){
+  // If we have saved data on this device, skip onboarding and go straight in.
+  if(load()){
+    document.getElementById("setup").style.display="none";
+    document.getElementById("app").style.display="block";
+    renderHeader();
+    render();
+    return;
+  }
+  // Otherwise show onboarding.
+  const di=document.getElementById("dateInput");
+  const todayISO=new Date().toISOString().slice(0,10);
+  di.value=todayISO;
+  di.addEventListener("input",updatePreview);
+  document.getElementById("cycleInput").addEventListener("input",updatePreview);
+  document.getElementById("setup").style.display="block";
+  setMode("due");
+})();
 </script>
 </body>
 </html>
