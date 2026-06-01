@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Bloom">
+<meta name="theme-color" content="#FBF6EF">
+<title>Bloom — Pregnancy Hub</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#FBF6EF; --paper:#FFFFFF; --ink:#2E2A2D; --clay:#C97B63; --clayDeep:#A85B45;
+    --sage:#7E8A6F; --sageSoft:#E6EADD; --blush:#F0D9D0; --gold:#D9A441; --line:#E8DDD2; --muted:#94887F;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  body{margin:0; background:var(--cream); color:var(--ink); font-family:'Outfit',system-ui,sans-serif;}
+  .serif{font-family:'Fraunces',Georgia,serif;}
+  @keyframes rise{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:none;}}
+  @keyframes float{0%,100%{transform:translateY(0);}50%{transform:translateY(-7px);}}
+  .rise{animation:rise .6s cubic-bezier(.2,.7,.3,1) both;}
+  .frame{max-width:460px;margin:0 auto;padding:0 0 40px;}
+  .card{background:var(--paper);border:1px solid var(--line);border-radius:22px;}
+  header{background:linear-gradient(160deg,var(--blush),var(--cream));padding:26px 24px 22px;border-bottom:1px solid var(--line);}
+  nav{display:flex;gap:6px;padding:16px 16px 4px;position:sticky;top:0;background:var(--cream);z-index:5;}
+  .tabbtn{flex:1;text-align:center;padding:9px 4px;border-radius:14px;font-size:12.5px;font-weight:500;
+    color:var(--muted);border:1px solid var(--line);background:transparent;cursor:pointer;transition:all .25s;}
+  .tabbtn.on{background:var(--ink);color:var(--cream);border-color:var(--ink);}
+  main{padding:12px 16px;}
+  .col{display:flex;flex-direction:column;gap:14px;}
+  .upper{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;font-weight:600;}
+  input[type=range]{-webkit-appearance:none;height:6px;border-radius:99px;background:var(--line);width:100%;outline:none;}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:var(--clay);cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.18);}
+  .bar{transition:height .6s cubic-bezier(.2,.7,.3,1);}
+  .chip{cursor:pointer;transition:all .2s;user-select:none;padding:6px 13px;border-radius:99px;font-size:12.5px;font-weight:500;background:var(--paper);color:var(--muted);border:1px solid var(--line);}
+  .weekpill{min-width:52px;text-align:center;padding:10px 0;border-radius:14px;background:var(--paper);color:var(--muted);border:1px solid var(--line);font-size:13px;cursor:pointer;flex-shrink:0;transition:all .2s;}
+  .weekpill.on{background:var(--clay);color:var(--cream);border-color:var(--clay);font-weight:600;}
+  .scrub{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;-webkit-overflow-scrolling:touch;}
+  .scrub::-webkit-scrollbar{height:0;}
+  button.act{font-family:'Outfit',sans-serif;width:100%;padding:12px;border-radius:14px;border:none;background:var(--ink);color:var(--cream);font-size:14px;font-weight:500;cursor:pointer;transition:background .3s;}
+  .wkbtn{width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:var(--paper);color:var(--ink);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+  .wkbtn:active{background:var(--blush);}
+  .searchbar{display:flex;gap:8px;background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:8px 8px 8px 16px;align-items:center;box-shadow:0 4px 18px rgba(46,42,45,.05);}
+  .searchbar input{flex:1;border:none;outline:none;font-family:'Outfit',sans-serif;font-size:15px;background:transparent;color:var(--ink);}
+  .searchbar input::placeholder{color:var(--muted);}
+  .askgo{width:40px;height:40px;border-radius:13px;border:none;background:var(--ink);color:var(--cream);font-size:17px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
+  .askgo:disabled{opacity:.5;}
+  .suggest{cursor:pointer;transition:all .2s;padding:7px 13px;border-radius:99px;font-size:12.5px;background:var(--sageSoft);color:var(--sage);border:1px solid transparent;}
+  .suggest:active{background:var(--sage);color:#fff;}
+  .answer{font-size:14.5px;line-height:1.65;color:#473F3B;}
+  .answer strong{color:var(--ink);}
+  .verdict{display:inline-flex;align-items:center;gap:7px;font-weight:600;font-size:13px;padding:6px 14px;border-radius:99px;margin-bottom:12px;}
+  .v-yes{background:var(--sageSoft);color:#5C6B4D;}
+  .v-no{background:#F5D9D2;color:#A8412B;}
+  .v-caution{background:#FaEFD3;color:#9A7416;}
+  .typing span{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--muted);margin:0 2px;animation:blink 1.2s infinite;}
+  .typing span:nth-child(2){animation-delay:.2s;} .typing span:nth-child(3){animation-delay:.4s;}
+  @keyframes blink{0%,60%,100%{opacity:.25;}30%{opacity:1;}}
+</style>
+</head>
+<body>
+<div class="frame">
+  <header>
+    <div style="display:flex;justify-content:space-between;align-items:baseline;">
+      <span class="serif" style="font-size:26px;font-weight:600;letter-spacing:-.5px;">Bloom</span>
+      <span id="triLabel" style="font-size:12px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;"></span>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;margin:16px 0 2px;">
+      <button class="wkbtn" onclick="changeWeek(-1)">−</button>
+      <p class="serif" id="weekLine" style="font-size:19px;margin:0;font-weight:400;flex:1;text-align:center;"></p>
+      <button class="wkbtn" onclick="changeWeek(1)">+</button>
+    </div>
+    <p id="dueLine" style="font-size:13.5px;color:var(--muted);margin:0;text-align:center;"></p>
+    <div style="margin-top:18px;">
+      <div style="height:8px;background:var(--paper);border-radius:99px;overflow:hidden;border:1px solid var(--line);">
+        <div id="prog" style="height:100%;background:linear-gradient(90deg,var(--clay),var(--gold));border-radius:99px;transition:width .5s;"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:10.5px;color:var(--muted);margin-top:6px;">
+        <span>Week 1</span><span id="progLabel"></span><span>Week 40</span>
+      </div>
+    </div>
+  </header>
+
+  <nav>
+    <div class="tabbtn on" data-tab="home" onclick="setTab('home')">Today</div>
+    <div class="tabbtn" data-tab="baby" onclick="setTab('baby')">Baby</div>
+    <div class="tabbtn" data-tab="wellness" onclick="setTab('wellness')">Wellness</div>
+    <div class="tabbtn" data-tab="appts" onclick="setTab('appts')">Appointments</div>
+    <div class="tabbtn" data-tab="ask" onclick="setTab('ask')">Ask</div>
+  </nav>
+
+  <main id="view"></main>
+
+  <footer style="text-align:center;font-size:10.5px;color:var(--muted);padding:8px 24px 0;line-height:1.5;">
+    Bloom is a companion, not a clinician. Always reach out to your provider with concerns.
+  </footer>
+</div>
+
+<script>
+const SIZES = {
+  1:["a poppy seed","—","—"],2:["a poppy seed","0.1 cm","<1 g"],3:["a pinhead","0.1 cm","<1 g"],
+  4:["a poppy seed","0.2 cm","<1 g"],5:["a sesame seed","0.3 cm","<1 g"],6:["a lentil","0.5 cm","<1 g"],
+  7:["a blueberry","1 cm","<1 g"],8:["a kidney bean","1.6 cm","1 g"],9:["a grape","2.3 cm","2 g"],
+  10:["a kumquat","3.1 cm","4 g"],11:["a fig","4.1 cm","7 g"],12:["a lime","5.4 cm","14 g"],
+  13:["a pea pod","7.4 cm","23 g"],14:["a lemon","8.7 cm","43 g"],15:["an apple","10.1 cm","70 g"],
+  16:["an avocado","11.6 cm","100 g"],17:["a turnip","13 cm","140 g"],18:["a bell pepper","14.2 cm","190 g"],
+  19:["a mango","15.3 cm","240 g"],20:["a banana","16.5 cm","300 g"],21:["a carrot","26.7 cm","360 g"],
+  22:["a spaghetti squash","27.8 cm","430 g"],23:["a large mango","28.9 cm","501 g"],24:["an ear of corn","30 cm","600 g"],
+  25:["a rutabaga","34.6 cm","660 g"],26:["a head of lettuce","35.6 cm","760 g"],27:["a cauliflower","36.6 cm","875 g"],
+  28:["an eggplant","37.6 cm","1 kg"],29:["a butternut squash","38.6 cm","1.2 kg"],30:["a cabbage","39.9 cm","1.3 kg"],
+  31:["a coconut","41.1 cm","1.5 kg"],32:["a squash","42.4 cm","1.7 kg"],33:["a pineapple","43.7 cm","1.9 kg"],
+  34:["a cantaloupe","45 cm","2.1 kg"],35:["a honeydew","46.2 cm","2.4 kg"],36:["romaine lettuce","47.4 cm","2.6 kg"],
+  37:["a stalk of swiss chard","48.6 cm","2.9 kg"],38:["a leek","49.8 cm","3.1 kg"],39:["a mini watermelon","50.7 cm","3.3 kg"],
+  40:["a small pumpkin","51.2 cm","3.5 kg"]
+};
+const EMOJI = {1:"🌱",2:"🌱",3:"🌱",4:"🌱",5:"🌰",6:"🫘",7:"🫐",8:"🫘",9:"🍇",10:"🍊",11:"🫛",12:"🍋",13:"🫛",14:"🍋",15:"🍎",16:"🥑",17:"🥬",18:"🫑",19:"🥭",20:"🍌",21:"🥕",22:"🎃",23:"🥭",24:"🌽",25:"🥬",26:"🥬",27:"🥦",28:"🍆",29:"🎃",30:"🥬",31:"🥥",32:"🎃",33:"🍍",34:"🍈",35:"🍈",36:"🥬",37:"🥬",38:"🥬",39:"🍉",40:"🎃"};
+
+function babyNote(w){
+  if(w<=4) return "A tiny ball of cells is implanting and the placenta is beginning to form. The neural tube — the foundation of the brain and spine — is taking shape.";
+  if(w<=8) return "Major organs are forming fast. A heartbeat can often be detected, and tiny limb buds are becoming arms and legs.";
+  if(w<=12) return "Fingers, toes, and facial features are defined. Reflexes are developing, and the risk of miscarriage drops notably at the end of this trimester.";
+  if(w<=16) return "Baby can make facial expressions and may start sucking a thumb. The skeleton is hardening from cartilage to bone.";
+  if(w<=20) return "You're at the halfway point. Baby is covered in fine hair (lanugo) and a protective coating, and you may feel first flutters of movement.";
+  if(w<=24) return "Baby's face is almost fully formed with eyelashes and brows. The inner ear is developed enough to sense balance, and kicks grow stronger.";
+  if(w<=28) return "Eyes can open and close, and baby has regular sleep-wake cycles. Lungs are practicing breathing motions.";
+  if(w<=32) return "Bones are fully formed but still soft. Baby is gaining fat fast, smoothing out that wrinkled skin.";
+  if(w<=36) return "Baby is getting plump and likely settling head-down. The lungs are nearly mature and digestion is rehearsing.";
+  return "Baby is full-term and ready to meet you. Most of the fine hair has shed and the lungs are ready for that first breath.";
+}
+function bodyNote(w){
+  if(w<=4) return "You may not feel different yet, though some notice tender breasts or mild fatigue as hormones rise.";
+  if(w<=8) return "Morning sickness, fatigue, and food aversions are common now. Be gentle with yourself — this is hard work.";
+  if(w<=12) return "Nausea often begins easing. You might feel a new burst of energy as the first trimester closes.";
+  if(w<=16) return "A small bump may appear. Many people feel their best in this stretch — the 'golden' second trimester.";
+  if(w<=20) return "Your bump is showing clearly. You may feel ligament twinges as your uterus grows upward.";
+  if(w<=24) return "Round-ligament twinges are common. You may notice stronger, more regular kicks around now.";
+  if(w<=28) return "As the third trimester begins, back pain, heartburn, and shortness of breath may appear. Rest often.";
+  if(w<=32) return "Braxton Hicks 'practice' contractions may start. Sleep can get tricky — side-lying with pillows helps.";
+  if(w<=36) return "You may feel pressure as baby drops lower. Frequent bathroom trips and fatigue are normal.";
+  return "Your body is preparing for labor. Watch for signs and keep your hospital bag ready.";
+}
+function milestone(w){
+  const m={6:"First heartbeat often detectable.",12:"End of first trimester — risk drops.",20:"Halfway there! Anatomy scan window.",24:"Viability milestone — a reassuring week.",28:"Third trimester begins.",37:"Baby is now full-term.",40:"Due date — any day now!"};
+  return m[w]||null;
+}
+
+let week = 24;
+let tab = "home";
+const SYMPTOMS=[["nausea","Nausea","#C97B63"],["fatigue","Fatigue","#7E8A6F"],["back","Back pain","#D9A441"],["mood","Mood","#A87BA8"],["sleep","Sleep","#6F8AA8"]];
+let log=[
+  {day:"Mon",nausea:2,fatigue:3,back:1,mood:4,sleep:3},{day:"Tue",nausea:1,fatigue:2,back:2,mood:4,sleep:4},
+  {day:"Wed",nausea:3,fatigue:4,back:2,mood:3,sleep:2},{day:"Thu",nausea:1,fatigue:3,back:3,mood:3,sleep:3},
+  {day:"Fri",nausea:0,fatigue:2,back:2,mood:5,sleep:4},{day:"Sat",nausea:1,fatigue:1,back:1,mood:5,sleep:5},
+  {day:"Sun",nausea:2,fatigue:2,back:2,mood:4,sleep:4}
+];
+let draft={nausea:1,fatigue:2,back:1,mood:4,sleep:3};
+let active=["nausea","fatigue","mood"];
+let saved=false;
+
+const APPTS=[["Jun","12","Glucose screening","Dr. Awan · Lab B",true],["Jun","26","Routine OB check-up","Dr. Awan",false],["Jul","10","Growth ultrasound","Imaging Suite 2",false]];
+let questions=["Is my back pain normal at this stage?","Should I adjust my iron intake?","When do I start counting kicks?"];
+
+function tri(w){return w<=13?"Trimester 1":w<=27?"Trimester 2":"Trimester 3";}
+function insight(){
+  const a=log[log.length-2]?.fatigue??0, b=log[log.length-1]?.fatigue??0;
+  return b>a ? "Your fatigue ticked up over the last day — a short afternoon rest may help."
+             : "Your mood has held steady and strong this week. Sleep seems to be tracking with it.";
+}
+
+function renderHeader(){
+  document.getElementById("triLabel").textContent=tri(week);
+  document.getElementById("weekLine").innerHTML=`Week <span style="color:var(--clayDeep);font-weight:600;">${week}</span> of 40`;
+  const days=(40-week)*7;
+  document.getElementById("dueLine").textContent= week>=40 ? "Your due date is here 🎉" : `${days} days until your due date`;
+  const pct=Math.round((week/40)*100);
+  document.getElementById("prog").style.width=pct+"%";
+  document.getElementById("progLabel").textContent=pct+"% there";
+}
+function changeWeek(d){week=Math.min(40,Math.max(1,week+d));renderHeader();render();}
+function jumpWeek(w){week=w;renderHeader();render();}
+
+function setTab(t){tab=t;document.querySelectorAll(".tabbtn").forEach(b=>b.classList.toggle("on",b.dataset.tab===t));render();}
+
+function ring(val,max,label,sub,color){
+  const r=34,c=2*Math.PI*r,off=c*(1-Math.min(val/max,1));
+  return `<svg width="96" height="96" viewBox="0 0 96 96">
+    <circle cx="48" cy="48" r="${r}" fill="none" stroke="var(--line)" stroke-width="9"/>
+    <circle cx="48" cy="48" r="${r}" fill="none" stroke="${color}" stroke-width="9" stroke-linecap="round"
+      stroke-dasharray="${c}" stroke-dashoffset="${off}" transform="rotate(-90 48 48)"/>
+    <text x="48" y="46" text-anchor="middle" class="serif" style="font-size:22px;fill:var(--ink);">${label}</text>
+    <text x="48" y="62" text-anchor="middle" style="font-size:9px;fill:var(--muted);letter-spacing:1px;">${sub}</text>
+  </svg>`;
+}
+
+function viewHome(){
+  const s=SIZES[week];
+  return `<div class="col rise">
+    <div class="card" style="padding:20px;display:flex;align-items:center;gap:18px;background:linear-gradient(135deg,var(--sageSoft),var(--paper));">
+      <div style="font-size:46px;animation:float 4s ease-in-out infinite;">${EMOJI[week]}</div>
+      <div>
+        <div class="upper" style="color:var(--sage);">Baby is the size of</div>
+        <div class="serif" style="font-size:20px;margin:2px 0;">${s[0]}</div>
+        <div style="font-size:12.5px;color:var(--muted);">${s[1]==="—"?"just getting started":s[1]+" · about "+s[2]}</div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+      <div class="card" style="padding:18px 14px;text-align:center;">${ring(3,3,"3/3","REMINDERS","var(--clay)")}<div style="font-size:12px;color:var(--muted);margin-top:4px;">Vitamins logged today</div></div>
+      <div class="card" style="padding:18px 14px;text-align:center;">${ring(82,100,"82","WELLNESS","var(--sage)")}<div style="font-size:12px;color:var(--muted);margin-top:4px;">Up 6 pts this week</div></div>
+    </div>
+    <div class="card" style="padding:18px;">
+      <div class="upper" style="color:var(--muted);margin-bottom:10px;">Next up</div>
+      <div style="display:flex;align-items:center;gap:14px;">
+        <div style="background:var(--blush);border-radius:14px;padding:10px 14px;text-align:center;min-width:52px;">
+          <div class="serif" style="font-size:18px;font-weight:600;">12</div><div style="font-size:10px;color:var(--clayDeep);letter-spacing:1px;">JUN</div>
+        </div>
+        <div><div style="font-size:14.5px;font-weight:500;">Glucose screening</div><div style="font-size:12.5px;color:var(--muted);">Dr. Awan · Lab B · fasting</div></div>
+      </div>
+    </div>
+    <div class="card" style="padding:18px;background:var(--ink);color:var(--cream);">
+      <div class="upper" style="color:var(--gold);margin-bottom:8px;">Smart insight</div>
+      <div class="serif" style="font-size:16px;line-height:1.45;">${insight()}</div>
+    </div>
+  </div>`;
+}
+
+function viewBaby(){
+  const s=SIZES[week], ms=milestone(week);
+  let pills="";
+  for(let w=1;w<=40;w++) pills+=`<div class="weekpill ${w===week?'on':''}" onclick="jumpWeek(${w})"><div style="font-size:9px;letter-spacing:1px;">WK</div>${w}</div>`;
+  return `<div class="col rise">
+    <div class="scrub" id="scrub">${pills}</div>
+    <div class="card" style="padding:22px;text-align:center;background:radial-gradient(circle at 50% 20%,var(--sageSoft),var(--paper));">
+      <div style="font-size:64px;animation:float 5s ease-in-out infinite;">${EMOJI[week]}</div>
+      <div class="serif" style="font-size:22px;margin:6px 0 2px;">This week, baby is ${s[0]}</div>
+      ${s[1]==="—"?"":`<div style="display:flex;justify-content:center;gap:22px;margin-top:12px;">
+        <div><div class="serif" style="font-size:18px;">${s[1]}</div><div style="font-size:11px;color:var(--muted);">length</div></div>
+        <div style="width:1px;background:var(--line);"></div>
+        <div><div class="serif" style="font-size:18px;">${s[2]}</div><div style="font-size:11px;color:var(--muted);">weight</div></div>
+      </div>`}
+    </div>
+    <div class="card" style="padding:18px;">
+      <div class="upper" style="color:var(--clayDeep);margin-bottom:8px;">Developing now</div>
+      <p style="font-size:14px;line-height:1.6;margin:0;color:#534B47;">${babyNote(week)}</p>
+    </div>
+    <div class="card" style="padding:18px;">
+      <div class="upper" style="color:var(--sage);margin-bottom:8px;">Your body</div>
+      <p style="font-size:14px;line-height:1.6;margin:0;color:#534B47;">${bodyNote(week)}</p>
+    </div>
+    ${ms?`<div class="card" style="padding:14px 18px;display:flex;gap:12px;align-items:center;background:var(--blush);border:none;">
+      <span style="font-size:22px;">🌟</span><span style="font-size:13.5px;font-weight:500;color:var(--clayDeep);">${ms}</span></div>`:""}
+  </div>`;
+}
+
+function viewWellness(){
+  let sliders="";
+  SYMPTOMS.forEach(([k,l,c])=>{
+    sliders+=`<div><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;">
+      <span style="font-weight:500;">${l}</span><span style="color:${c};font-weight:600;" id="val-${k}">${draft[k]}/5</span></div>
+      <input type="range" min="0" max="5" value="${draft[k]}" oninput="setDraft('${k}',this.value)"></div>`;
+  });
+  let chips="";
+  SYMPTOMS.forEach(([k,l,c])=>{
+    const on=active.includes(k);
+    chips+=`<span class="chip" onclick="toggle('${k}')" style="${on?`background:${c};color:#fff;border-color:${c};`:""}">${l}</span>`;
+  });
+  let bars="";
+  log.forEach(d=>{
+    let inner="";
+    SYMPTOMS.filter(([k])=>active.includes(k)).forEach(([k,,c])=>{
+      inner+=`<div class="bar" style="width:6px;border-radius:99px;background:${c};height:${(d[k]/5)*100}%;min-height:3px;opacity:.9;"></div>`;
+    });
+    bars+=`<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;">
+      <div style="display:flex;align-items:flex-end;gap:2px;height:104px;">${inner}</div>
+      <span style="font-size:10px;color:var(--muted);">${d.day}</span></div>`;
+  });
+  return `<div class="col rise">
+    <div class="card" style="padding:18px;">
+      <div class="upper" style="color:var(--muted);margin-bottom:14px;">How do you feel today?</div>
+      <div style="display:flex;flex-direction:column;gap:14px;">${sliders}</div>
+      <button class="act" id="logBtn" style="margin-top:16px;${saved?'background:var(--sage);':''}" onclick="addEntry()">${saved?"✓ Logged — nice work":"Log today"}</button>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;">${chips}</div>
+    <div class="card" style="padding:18px 16px 14px;">
+      <div class="upper" style="color:var(--muted);margin-bottom:16px;">Your week in feeling</div>
+      <div style="display:flex;align-items:flex-end;gap:8px;height:130px;">${bars}</div>
+    </div>
+    <div class="card" style="padding:18px;background:var(--ink);color:var(--cream);">
+      <div class="upper" style="color:var(--gold);margin-bottom:8px;">Pattern noticed</div>
+      <div class="serif" style="font-size:15.5px;line-height:1.5;">${insight()}</div>
+      <div style="font-size:11px;color:#B9AEA6;margin-top:10px;">Informational only — not medical advice.</div>
+    </div>
+  </div>`;
+}
+
+function viewAppts(){
+  let rows="";
+  APPTS.forEach((a,i)=>{
+    rows+=`<div class="card" style="padding:16px;display:flex;align-items:center;gap:14px;animation:rise .5s ${i*0.08}s both;">
+      <div style="background:${a[4]?'var(--clay)':'var(--sageSoft)'};color:${a[4]?'#fff':'var(--sage)'};border-radius:14px;padding:10px 12px;text-align:center;min-width:50px;">
+        <div class="serif" style="font-size:16px;font-weight:600;">${a[1]}</div><div style="font-size:9.5px;letter-spacing:1px;">${a[0].toUpperCase()}</div></div>
+      <div style="flex:1;"><div style="font-size:14.5px;font-weight:500;">${a[2]}</div><div style="font-size:12.5px;color:var(--muted);">${a[3]}</div></div>
+      ${a[4]?'<span style="font-size:10px;color:var(--clayDeep);font-weight:600;letter-spacing:1px;">SOON</span>':''}
+    </div>`;
+  });
+  let qs="";
+  questions.forEach((q,i)=>{
+    qs+=`<div style="display:flex;gap:10px;padding:8px 0;border-bottom:${i<questions.length-1?'1px solid var(--line)':'none'};font-size:13.5px;">
+      <span style="color:var(--clay);">○</span>${q}</div>`;
+  });
+  return `<div class="col rise">
+    <div class="card" style="padding:18px;background:linear-gradient(135deg,var(--blush),var(--paper));">
+      <div class="upper" style="color:var(--clayDeep);">Coming up next</div>
+      <div class="serif" style="font-size:19px;margin:6px 0 2px;">Glucose screening</div>
+      <div style="font-size:13px;color:var(--muted);">in 12 days · remember to fast 8 hrs before</div>
+    </div>
+    ${rows}
+    <div class="card" style="padding:18px;">
+      <div class="upper" style="color:var(--muted);margin-bottom:10px;">Questions for Dr. Awan</div>
+      ${qs}
+      <button class="act" style="margin-top:12px;background:transparent;color:var(--muted);border:1px dashed var(--line);" onclick="addQuestion()">+ Add a question</button>
+    </div>
+  </div>`;
+}
+
+function render(){
+  const v={home:viewHome,baby:viewBaby,wellness:viewWellness,appts:viewAppts,ask:viewAsk}[tab];
+  document.getElementById("view").innerHTML=v();
+  if(tab==="baby"){
+    const el=document.querySelector(".weekpill.on");
+    if(el) el.scrollIntoView({inline:"center",block:"nearest"});
+  }
+}
+
+function setDraft(k,v){draft[k]=+v;document.getElementById("val-"+k).textContent=v+"/5";}
+function toggle(k){active=active.includes(k)?active.filter(x=>x!==k):[...active,k];render();}
+function addEntry(){
+  const labels=["M","T","W","T","F","S","S"];
+  log=[...log.slice(1),{day:labels[log.length%7],...draft}];
+  saved=true;render();
+  setTimeout(()=>{saved=false;if(tab==="wellness")render();},1800);
+}
+function addQuestion(){
+  const q=prompt("What would you like to ask your provider?");
+  if(q&&q.trim()){questions.push(q.trim());render();}
+}
+
+// ── Ask tab ───────────────────────────────────────────────────────────
+let chat=[];
+let asking=false;
+
+const SUGGESTS=["Can I eat sushi?","Is brie safe?","How much coffee is okay?","Can I eat deli meat?","Is honey safe?"];
+
+// Offline food safety fallback
+const FOOD_DB = [
+  {k:["sushi","raw fish","sashimi"],v:"caution",t:"Cooked sushi (like California or shrimp rolls) is fine. Avoid raw fish and raw shellfish due to listeria and parasite risk. Low-mercury cooked fish is great in moderation."},
+  {k:["soft cheese","brie","camembert","feta","blue cheese","goat cheese"],v:"caution",t:"Soft cheeses are safe ONLY if made from pasteurized milk and the label says so. Avoid unpasteurized soft cheeses due to listeria risk. Hard cheeses are always fine."},
+  {k:["deli meat","cold cuts","lunch meat","ham","salami"],v:"caution",t:"Safe if heated until steaming hot (165°F/74°C) right before eating, which kills listeria. Eating it cold straight from the package carries a small listeria risk."},
+  {k:["coffee","caffeine","espresso","latte"],v:"caution",t:"Most guidance puts the limit at about 200 mg of caffeine per day — roughly one 12 oz coffee. Staying under that is considered safe."},
+  {k:["alcohol","wine","beer","cocktail"],v:"no",t:"No amount of alcohol is established as safe in pregnancy. Major health bodies recommend avoiding it entirely."},
+  {k:["sushi rice","cooked roll","tempura roll","california roll"],v:"yes",t:"Fully cooked rolls are a safe and tasty option. Just steer clear of the raw-fish varieties."},
+  {k:["salmon","cooked salmon","shrimp","cod","tilapia","sardines"],v:"yes",t:"Well-cooked low-mercury fish is encouraged — it's a great source of omega-3s. Aim for 2–3 servings a week."},
+  {k:["tuna","albacore"],v:"caution",t:"Canned light tuna is lower in mercury. Limit albacore/white tuna to about one serving a week, and avoid high-mercury fish like swordfish, shark, and king mackerel."},
+  {k:["eggs","runny egg","poached egg"],v:"caution",t:"Fully cooked eggs (firm yolk and white) are safe. Avoid raw or runny eggs unless they're pasteurized, due to salmonella risk."},
+  {k:["peanut","peanuts","nuts","peanut butter"],v:"yes",t:"Peanuts and nuts are safe and nutritious unless you personally have a nut allergy. Older advice to avoid them is outdated."},
+  {k:["honey"],v:"yes",t:"Honey is safe for you during pregnancy. (The 'no honey' rule is only for babies under 12 months, not for you.)"},
+  {k:["sprouts","raw sprouts","alfalfa"],v:"no",t:"Avoid raw sprouts (alfalfa, mung, clover). They're hard to clean and linked to bacterial contamination. Cooked sprouts are fine."},
+  {k:["pate","liver","liver pate"],v:"caution",t:"Avoid pâté (listeria risk) and limit liver — it's very high in vitamin A, which can be harmful in large amounts during pregnancy."},
+  {k:["raw milk","unpasteurized"],v:"no",t:"Avoid raw/unpasteurized milk and anything made from it. Pasteurized dairy is safe."},
+  {k:["smoked salmon","lox"],v:"caution",t:"Cold smoked salmon/lox carries a small listeria risk; heating it through makes it safe."},
+  {k:["herbal tea","green tea"],v:"caution",t:"Some herbal teas are fine in moderation. Green tea counts toward your caffeine limit. Check specific blends with your provider."},
+  {k:["spicy","spicy food"],v:"yes",t:"Spicy food is perfectly safe. It won't harm the baby — though it may give you heartburn, especially later on."},
+  {k:["pineapple"],v:"yes",t:"Pineapple is safe and nutritious. The myth that it triggers labor isn't supported by evidence."},
+  {k:["papaya"],v:"caution",t:"Ripe papaya is fine in moderation. Avoid unripe/green papaya, which contains a latex compound that's best avoided."},
+  {k:["hot dog","sausage"],v:"caution",t:"Safe when heated until steaming hot. Avoid eating them cold or lukewarm due to listeria risk."},
+];
+
+function lookupFood(q){
+  const s=q.toLowerCase();
+  for(const f of FOOD_DB){ if(f.k.some(k=>s.includes(k))) return f; }
+  return null;
+}
+
+function verdictBadge(v){
+  if(v==="yes") return '<div class="verdict v-yes">✓ Generally safe</div>';
+  if(v==="no") return '<div class="verdict v-no">✕ Best avoided</div>';
+  if(v==="caution") return '<div class="verdict v-caution">! With care</div>';
+  return "";
+}
+
+function escapeHtml(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+
+async function askAI(q){
+  try{
+    // Call our secure backend route — API key never exposed to the browser
+    const res = await fetch('/api/ask', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question: q })
+    });
+    if(!res.ok) throw new Error('api');
+    const data = await res.json();
+    let text = data.answer || '';
+    let v = null;
+    const m = text.match(/^VERDICT:\s*(yes|no|caution)/i);
+    if(m){ v = m[1].toLowerCase(); text = text.replace(/^VERDICT:\s*(yes|no|caution)\s*/i,'').trim(); }
+    return (v ? verdictBadge(v) : '') + '<div class="answer">' + escapeHtml(text).replace(/\n/g,'<br>') + '</div>';
+  } catch(e){
+    // Offline fallback
+    const f = lookupFood(q);
+    if(f) return verdictBadge(f.v) + '<div class="answer">' + f.t + '</div>' +
+      '<div style="font-size:11px;color:var(--muted);margin-top:10px;">From Bloom\'s built-in food guide · always confirm with your provider</div>';
+    return '<div class="answer">Couldn\'t reach the assistant right now. I have a built-in guide for common foods — try asking about sushi, soft cheese, deli meat, coffee, or alcohol.</div>';
+  }
+}
+
+async function submitAsk(){
+  if(asking) return;
+  const inp = document.getElementById("askInput");
+  const q = inp.value.trim();
+  if(!q) return;
+  asking = true;
+  chat.push({role:"user", html: escapeHtml(q)});
+  chat.push({role:"ai", html:'<div class="typing"><span></span><span></span><span></span></div>'});
+  inp.value = "";
+  render();
+  const answer = await askAI(q);
+  chat[chat.length-1].html = answer;
+  asking = false;
+  render();
+}
+
+function quickAsk(q){ document.getElementById("askInput").value=q; submitAsk(); }
+
+function viewAsk(){
+  let bubbles="";
+  chat.forEach(m=>{
+    if(m.role==="user"){
+      bubbles+=`<div style="align-self:flex-end;max-width:85%;background:var(--ink);color:var(--cream);padding:11px 15px;border-radius:18px 18px 4px 18px;font-size:14px;">${m.html}</div>`;
+    }else{
+      bubbles+=`<div style="align-self:flex-start;max-width:90%;background:var(--paper);border:1px solid var(--line);padding:14px 16px;border-radius:18px 18px 18px 4px;">${m.html}</div>`;
+    }
+  });
+  const sugg = SUGGESTS.map(s=>`<span class="suggest" onclick="quickAsk('${s.replace(/'/g,"\\'")}')">${s}</span>`).join("");
+  return `<div class="col rise">
+    <div class="searchbar">
+      <input id="askInput" placeholder="Ask anything — e.g. can I eat sushi?" onkeydown="if(event.key==='Enter')submitAsk()" autocomplete="off">
+      <button class="askgo" onclick="submitAsk()" ${asking?'disabled':''}>↑</button>
+    </div>
+    ${chat.length===0?`
+      <div style="display:flex;flex-wrap:wrap;gap:8px;">${sugg}</div>
+      <div class="card" style="padding:20px;text-align:center;background:linear-gradient(135deg,var(--sageSoft),var(--paper));">
+        <div style="font-size:34px;margin-bottom:6px;">🌿</div>
+        <div class="serif" style="font-size:18px;margin-bottom:6px;">Quick, honest answers</div>
+        <div style="font-size:13px;color:var(--muted);line-height:1.55;">Wondering if a food is safe, or what a symptom means? Ask away. Bloom gives straight answers and tells you when something is worth a call to your provider.</div>
+      </div>`:`
+      <div style="display:flex;flex-direction:column;gap:12px;">${bubbles}</div>`}
+    <div style="font-size:10.5px;color:var(--muted);text-align:center;line-height:1.5;padding:0 8px;">
+      Bloom gives general information, not medical advice. For symptoms, pain, or anything that worries you, contact your healthcare provider.
+    </div>
+  </div>`;
+}
+
+renderHeader();
+render();
+</script>
+</body>
+</html>
